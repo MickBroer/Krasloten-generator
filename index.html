@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krasslut Studio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Bovenbalk: projectbestanden bevatten ook alle handmatige bewerkingen. -->
+  <header>
+    <div class="brand">Krasslut Generator</div>
+    <span class="local">Everything stays on your device</span>
+    <div class="actions">
+      <button id="openProject">Open project</button>
+      <button id="saveProject">Save project</button>
+      <input id="projectFile" type="file" accept=".json" hidden>
+    </div>
+  </header>
+
+  <main>
+    <!-- Linkerkolom: algemene instellingen en instellingen voor de volgende serie. -->
+    <aside>
+      <div class="eyebrow">YOUR WORKSPACE</div>
+
+      <section>
+        <h2><span>01</span> Design & icons</h2>
+        <div class="upload">
+          <button id="chooseFront" type="button">Load front design</button>
+          <input id="front" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <span id="frontFileName" class="file-name">No front design loaded</span>
+        </div>
+        <div class="upload">
+          <button id="chooseIcons" type="button">Choose icon collection</button>
+          <input id="icons" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+          <span id="iconsFileName" class="file-name">Sample icons</span>
+        </div>
+        <div class="field-grid">
+          <label>Number of winning icons<input id="winningCount" type="number" min="1" max="12" value="2"></label>
+          <label>Number of your icons<input id="ownCount" type="number" min="1" max="24" value="4"></label>
+        </div>
+        <p id="requiredIcons" class="hint"></p>
+        <div class="upload">
+          <button id="chooseNudes" type="button">Add nude images</button>
+          <input id="nudes" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+          <span id="nudesFileName" class="file-name">No nude images loaded</span>
+          <button id="clearNudes" class="text">Clear nude images for next batch</button>
+        </div>
+        <p class="hint">A prize named “Nude” wins alone. One uploaded image replaces all your icons and their prize labels, keeping the winning icons visible.</p>
+        <p id="assetInfo" class="hint"></p>
+        <button id="demo" class="text">Use sample design & icons</button>
+      </section>
+
+      <section>
+        <h2><span>02</span> Prizes & odds</h2>
+        <div class="tablehead"><span>Prize</span><span>Odds %</span></div>
+        <div id="prices"></div>
+        <button id="addPrice" class="text">＋ Add prize</button>
+        <label class="check">
+          <input type="checkbox" id="overlap" checked>
+          Allow multiple prizes per ticket
+        </label>
+        <p class="hint">0% prizes can appear but are never won. Multiple wins are assigned automatically.</p>
+      </section>
+
+      <section>
+        <h2><span>03</span> Generate a batch</h2>
+        <label for="amount">Number of tickets</label>
+        <input id="amount" type="number" min="1" max="10000" value="40">
+        <button id="generate" class="primary">Generate my batch ↗</button>
+        <p class="hint">Odds, prize names and icon choices apply when generating a new batch.</p>
+        <p id="pendingSettings" class="notice" hidden>
+          Settings changed. Your current tickets and manual edits are kept until you generate again.
+        </p>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <div class="side-tabs" role="tablist" aria-label="Ticket side">
+        <button id="frontTab" role="tab" aria-selected="true">Front</button>
+        <button id="backTab" role="tab" aria-selected="false">Back</button>
+      </div>
+      <div class="workspacehead">
+        <div>
+          <div class="eyebrow">DESIGN WORKSPACE</div>
+        </div>
+        <div id="frontModes" class="segmented" aria-label="Editor mode">
+          <button id="layoutMode" class="active" aria-pressed="true">Layout · all tickets</button>
+          <button id="ticketMode" aria-pressed="false">Edit this ticket</button>
+          <button id="previewMode" aria-pressed="false">Preview</button>
+        </div>
+      </div>
+
+      <!-- Deze instellingen gelden voor alle loten. -->
+      <div id="frontToolbar" class="toolbar">
+        <label>Icon size <input id="iconSize" type="range" min="4" max="22" value="12"></label>
+        <label>Text size <input id="fontSize" type="range" min="1" max="6" step="0.1" value="2.7"></label>
+        <label>Font <select id="fontFamily"></select></label>
+        <label>Text color <input id="textColor" type="color" value="#000000"></label>
+        <button id="resetLayout">Reset positions</button>
+      </div>
+
+      <section id="backEditor" class="panel" hidden>
+        <div class="eyebrow">BACK DESIGN · ALL TICKETS</div>
+        <h2>Back Design</h2>
+        <div class="upload">
+          <button id="chooseBack" type="button">Load back design</button>
+          <input id="back" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <span id="backFileName" class="file-name">No back design loaded</span>
+          <button id="removeBack" class="text">Remove back design</button>
+        </div>
+        <label class="check"><input id="backShowNumber" type="checkbox"> Show number in series</label>
+        <div id="backNumberControls" class="field-grid" hidden>
+          <label>Number X (%)<input id="backX" type="number" min="0" max="100" step="0.1" value="50"></label>
+          <label>Number Y (%)<input id="backY" type="number" min="0" max="100" step="0.1" value="90"></label>
+          <label>Number size (%)<input id="backFontSize" type="range" min="1" max="15" step="0.1" value="3"></label>
+          <label>Number font<select id="backFontFamily"></select></label>
+          <label>Number color<input id="backColor" type="color" value="#000000"></label>
+        </div>
+        <p class="hint">The back is optional. With the number enabled, each back gets its own ticket number, such as 7 / 40. Without an image, the back is white.</p>
+      </section>
+
+      <div class="stage">
+        <canvas id="preview" width="1000" height="650" tabindex="0"
+                aria-label="Scratch card editor. Use the controls below for precise positioning."></canvas>
+      </div>
+      <div class="underpreview">
+        <span id="modeHelp"></span>
+        <div class="pager">
+          <span id="editedBadge" class="badge" hidden>Manually edited</span>
+          <button id="prev" aria-label="Previous ticket">←</button>
+          <span id="pageLabel">Sample</span>
+          <button id="next" aria-label="Next ticket">→</button>
+        </div>
+      </div>
+
+      <section id="nudeAreaEditor" class="panel nude-area-editor">
+        <div class="section-title"><h2>Nude image area</h2>
+          <button id="editNudeArea" aria-pressed="false">Position image area</button></div>
+        <p class="hint">Choose where a Nude winner’s image will appear. Set its center and size below, or enable positioning and drag the frame. The full image fits inside this area without cropping. Winning icons stay visible.</p>
+        <div class="field-grid">
+          <label>Area center X (%)<input id="nudeAreaX" type="number" min="0" max="100" step="0.1" value="50"></label>
+          <label>Area center Y (%)<input id="nudeAreaY" type="number" min="0" max="100" step="0.1" value="75"></label>
+          <label>Area width (%)<input id="nudeAreaWidth" type="number" min="2" max="100" step="0.1" value="80"></label>
+          <label>Area height (%)<input id="nudeAreaHeight" type="number" min="2" max="100" step="0.1" value="32"></label>
+        </div>
+      </section>
+
+      <details id="positionDetails" class="position-details">
+        <summary>Fine-tune layout positions · all tickets</summary>
+        <div id="positions"></div>
+      </details>
+
+      <!-- Alleen voor het geselecteerde lot. De badge staat buiten het canvas. -->
+      <section id="ticketEditor" class="panel ticket-editor" hidden>
+        <div class="section-title">
+          <div><div class="eyebrow">THIS TICKET ONLY</div><h2>Make it your own.</h2></div>
+          <button id="resetTicket">Reset this ticket's edits</button>
+        </div>
+        <p class="hint">Visual edits do not change recorded prizes or odds. The “Manually edited” label is never printed.</p>
+        <p id="recordedOutcome" class="notice"></p>
+        <p id="nudeTicketNote" class="notice" hidden></p>
+        <div id="prizeTextFields" class="field-grid"></div>
+        <details id="sampleTextDetails">
+          <summary>Edit sample design text</summary>
+          <div id="sampleTextFields" class="field-grid"></div>
+        </details>
+        <p id="artworkTextNote" class="hint" hidden>Text baked into an uploaded design cannot be edited here. Add a text layer or update your original artwork.</p>
+
+        <div class="actions">
+          <button id="addImage">＋ Add image</button>
+          <button id="addText">＋ Add text</button>
+          <input id="overlayFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        </div>
+        <p class="hint">Added items sit above the design. Select one below or click it on the ticket, then drag it into place. Drag an image’s corner handles to resize it proportionally.</p>
+        <div id="overlayList" class="layer-list"></div>
+
+        <fieldset id="overlayControls" hidden>
+          <legend>Selected item</legend>
+          <div class="field-grid">
+            <label>X position (%)<input id="overlayX" type="number" min="0" max="100" step="0.1"></label>
+            <label>Y position (%)<input id="overlayY" type="number" min="0" max="100" step="0.1"></label>
+            <label id="imageWidthField">Image width (%)<input id="overlayWidth" type="range" min="2" max="100" step="1"></label>
+            <label id="overlayFontField">Text size (%)<input id="overlayFont" type="range" min="1" max="15" step="0.1"></label>
+            <label id="overlayFontFamilyField">Font<select id="overlayFontFamily"></select></label>
+            <label id="overlayColorField">Text color<input id="overlayColor" type="color" value="#000000"></label>
+          </div>
+          <label id="overlayTextField">Text<textarea id="overlayText" rows="3" maxlength="500"></textarea></label>
+          <div class="actions">
+            <button id="bringForward">Bring to front</button>
+            <button id="removeOverlay">Remove selected item</button>
+          </div>
+        </fieldset>
+      </section>
+
+      <div id="message" role="status" aria-live="polite"></div>
+      <div class="bottomgrid">
+        <section class="panel">
+          <div class="eyebrow">ORIGINAL RECORDED OUTCOMES</div>
+          <h2>Prize distribution</h2>
+          <div id="summary" class="empty">Generate a batch to see the distribution.</div>
+        </section>
+        <section class="panel">
+          <div class="eyebrow">READY TO PRINT</div>
+          <h2>Export</h2>
+          <div class="field-grid">
+            <label>Ticket width (mm)<input id="widthMM" type="number" min="10" max="1000" value="90"></label>
+            <label>Resolution (dpi)<select id="dpi"><option>150</option><option selected>300</option><option>600</option></select></label>
+            <label>Columns<input id="columns" type="number" min="1" max="20" value="4"></label>
+            <label>Spacing (mm)<input id="gap" type="number" min="0" max="50" value="3"></label>
+          </div>
+          <p class="hint" id="dimensions"></p>
+          <button id="exportSheet" class="primary">Download full sheet · PNG</button>
+          <div class="actions">
+            <button id="exportSingle">This ticket · PNG</button>
+            <button id="exportBack">Back sheet · PNG</button>
+          </div>
+          <button id="exportReport" class="text">Download original prize report · CSV</button>
+          <p class="hint">PNGs include your edits, but no guides or editing labels. Print at the dimensions shown. For oversized sheets, reduce the batch size or resolution.</p>
+        </section>
+      </div>
+      <section class="panel result-list">
+        <div class="eyebrow">EVERY TICKET, EVERY OUTCOME</div>
+        <h2>Results by ticket number</h2>
+        <p class="hint">These are the original recorded prizes. Manual edits do not change them. Click a ticket number to open that ticket.</p>
+        <div class="results-toolbar">
+          <label>Show <select id="resultsFilter">
+            <option value="all">All tickets</option>
+            <option value="winners">Winners only</option>
+            <option value="nude">Nude winners</option>
+            <option value="edited">Manually edited</option>
+          </select></label>
+          <div class="pager"><button id="resultsPrev" aria-label="Previous results page">←</button>
+            <span id="resultsPageLabel"></span>
+            <button id="resultsNext" aria-label="Next results page">→</button></div>
+        </div>
+        <div id="ticketResults" class="table-scroll"></div>
+      </section>
+    </div>
+  </main>
+  <footer>Krasslut Studio · Local JavaScript app · No server uploads</footer>
+
+  <!-- Bevestiging buiten main, zodat deze ook tijdens een vergrendelde actie werkt. -->
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+    <h2 id="confirmTitle">Replace current work?</h2>
+    <p id="confirmMessage"></p>
+    <div class="actions">
+      <button id="confirmCancel">Cancel</button>
+      <button id="confirmContinue" class="primary">Continue</button>
+    </div>
+  </dialog>
+
+  <!-- Houd deze volgorde aan: elk bestand gebruikt de bestanden erboven. -->
+  <script src="config.js"></script>
+  <script src="engine.js"></script>
+  <script src="model.js"></script>
+  <script src="files.js"></script>
+  <script src="geometry.js"></script>
+  <script src="render.js"></script>
+  <script src="export.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
